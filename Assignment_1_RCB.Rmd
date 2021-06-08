@@ -178,4 +178,7 @@ predicted_values %>%
 ggplot(aes(x = x, y = pred, colour = as.factor(id), shape = as.factor(Group) )) +
   geom_point() 
 ```
+
+
+
 Plotting the values of X and Yhat shows a slightly positive relation, that is, higher values for X will result in high values of Yhat. Looking at the first 5 id's, it seams like there is a notable differences between the groups (intercepts), with group 5 seems to have the lowest predicted values and Group 1 the highest. 
