@@ -9,7 +9,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## Load packages
+### Load packages
 
 ```{r 9_load_packages, include=FALSE}
 rm(list=ls())
@@ -19,13 +19,13 @@ library(broom.mixed)
 library(readr)
 ```
 
-## Importing the data 
+### Importing the data 
+
 ```{r}
 data_wide <- read_csv("data_wide.csv")
 View(data_wide)
 ```
-## Task 1 
-Transpose the data from wide form to long form. I also preview the first 10 rows of the new pivoted data set
+### Task 1 Transpose the data from wide form to long form. I also preview the first 10 rows of the new pivoted data set
 
 ```{r}
 data_long <- data_wide %>%
@@ -36,21 +36,47 @@ data_long <- data_wide %>%
 head(data_long,10)
 ```
 
-## Task 2: 
-Plot the data in aggregate and describe what you see 
+### Task 2: Plot the data in aggregate and describe what you see 
 
 ```{r}
 ggplot(data = data_long, mapping = aes(x = x, y = y)) +
   geom_point() +
-  geom_smooth(method = "lm", na.rm = T, col = "black", se = F) +
-  theme(legend.position = "top")
+  geom_smooth(method = "lm", na.rm = T, col = "black", se = F)
 ```
 What we can see from the data is a slightly negative relationship between x and y. 
 
-## Task 3: 
-Plot the data by group to see if there is any evidence of Simpson's paradox. What do you think after looking at this?
+### Task 3: Plot the data by group to see if there is any evidence of Simpson's paradox. What do you think after looking at this?
 
-In order to plot the data by group, I neet to create a random intercep model first and extract the coefficients. 
+First, I'll try to see if coloring by group allow us to see if there is any evidence of Simpson's Paradox. 
+
+```{r}
+ggplot(data = data_long, mapping = aes(x = x, y = y)) +
+  geom_point (na.rm = T, aes(col = Group), alpha = 0.5) +
+  geom_smooth(method = "lm", na.rm = T, col = "black", se = F) +
+  theme(legend.position = "top")
+
+```
+Since there are so many groups, it may be better to build separece scatter plots. 
+
+```{r}
+ggplot(data = data_long, mapping = aes(x = x, y = y)) +
+     geom_point () +
+     geom_smooth(method = "lm", na.rm = T, col = "black", se = F) +
+     facet_wrap(~ Group) 
+```
+
+
+Yes, it appears to be evidence of Simpson's Paradox, since the relationship between x and y seems slightly positive for all groups, execpt maybe for groups 3 and 5
+
+
+### Task 4: Fit a pooled model ignoring the hierarchical structure of the data (using the lm function in r)
+
+
+```{r}
+lm(y ~ 1 + x, data = data_long)
+```
+
+### Task 5: Fit a multilevel model with random intercepts for each group in the data (use the lmer function in r). What changes in the parameters between the pooled and multilevel models?
 
 ```{r}
 # First, I need create a fit random intercepts model
@@ -64,14 +90,15 @@ model_coefs <- coef(intercepts_model)$Group %>%
 # and here we can see coefficients
 model_coefs
 ```
+The main difference is in the sign of the slope. As you can see, in the pooled model, the slope is negative (as seen aslo in the original scatter plot). When you create a model with random intercepts, we now have a positive single value of slopes. This is indicative of Simpson's Paradox. 
 
-Once I have the coefficients, I need to join them to the original data set. I will create a second data set named `data_long_rani` for that. 
+We can plot this coefficients to see the difference by joining the new intercepts and slopes to the original data set. I will create a second data  set named `data_long_rani` for that. 
 
 ```{r}
 data_long_rani <- left_join(data_long, model_coefs, by = "Group")
 ```
 
-Once I have extracted the coefficients and joined them to my original data set, I can plot it an see if there is evidence of Simpson's Paradox. 
+Once I have extracted the coefficients and joined them to my original data set, I can plot it.
 
 ```{r}
 model_coef_plot <- ggplot(data = data_long_rani, 
@@ -93,21 +120,37 @@ model_coef_plot
 ```
 
 
-## Task 4: 
-Fit a pooled model ignoring the hierarchical structure of the data (using the lm function in r)
+### Task 6: Fit a model with random intercepts and slopes for each group. 
 
-## Task 5: 
-Fit a multilevel model with random intercepts for each group in the data (use the lmer function in r). What changes in the parameters between the pooled and multilevel models?
+```{r}
+# fit random slopes model
+model <- lmer(y ~ x + (1 + x | Group), data = data_long) 
 
-## Task 6: 
-Fit a model with random intercepts and slopes for each group. 
+# Then I extract the group's coefficients as before
+model_coefs <- coef(model)$Group %>% 
+  rename(Intercept = `(Intercept)`, Slope = x) %>% 
+  rownames_to_column("Group")
 
-## Task 7: 
-Fit a model with crossed random effects (both intercepts and slopes) for both group and id.
+# see coefficients
+model_coefs
+```
 
-## Task 8: 
-Because the models in Tasks 5, 6, and 7 are all nested, use a Chi-square test on model deviance to assess whether the more complicated models (i.e., those in Tasks 6 and 7) provide better model fits. To do this, it would be helpful to use the "anova" function in r.
+Next, we'll join these coefficients to our original data.
 
-## Task 9: 
-[Not graded because there is a chance you won't figure it out in r] get the predicted values (i.e., y_hat) for the model from Task 7. Then plot x and the predicted y's for the first 5 id's in the dataset also accounting for the 5 groups. Here is the code for this last task:
+```{r}
+data_long_rans <- left_join(data_long, model_coefs, by = "Group")
+```
+
+Then we'll plot our original data with our new, random intercepts model. Here, we'll use a new, cheat function from ggplot, `%+%` (read: add components). This takes a fitted plot from ggplot, and replaces the data from that plot with whatever comes to the right of the function. 
+
+```{r}
+model_coef_plot %+% data_long_rans
+```
+
+### Task 7: Fit a model with crossed random effects (both intercepts and slopes) for both group and id.
+
+
+### Task 8: Because the models in Tasks 5, 6, and 7 are all nested, use a Chi-square test on model deviance to assess whether the more complicated models (i.e., those in Tasks 6 and 7) provide better model fits. To do this, it would be helpful to use the "anova" function in r.
+
+### Task 9: [Not graded because there is a chance you won't figure it out in r] get the predicted values (i.e., y_hat) for the model from Task 7. Then plot x and the predicted y's for the first 5 id's in the dataset also accounting for the 5 groups. Here is the code for this last task:
 
