@@ -39,8 +39,59 @@ head(data_long,10)
 ## Task 2: 
 Plot the data in aggregate and describe what you see 
 
+```{r}
+ggplot(data = data_long, mapping = aes(x = x, y = y)) +
+  geom_point() +
+  geom_smooth(method = "lm", na.rm = T, col = "black", se = F) +
+  theme(legend.position = "top")
+```
+What we can see from the data is a slightly negative relationship between x and y. 
+
 ## Task 3: 
 Plot the data by group to see if there is any evidence of Simpson's paradox. What do you think after looking at this?
+
+In order to plot the data by group, I neet to create a random intercep model first and extract the coefficients. 
+
+```{r}
+# First, I need create a fit random intercepts model
+intercepts_model <- lmer(y ~ 1+ x + (1 | Group), data = data_long) 
+
+# Then I extract the group's coefficients. 
+model_coefs <- coef(intercepts_model)$Group %>% 
+  rename(Intercept = `(Intercept)`, Slope = x) %>% 
+  rownames_to_column("Group")
+
+# and here we can see coefficients
+model_coefs
+```
+
+Once I have the coefficients, I need to join them to the original data set. I will create a second data set named `data_long_rani` for that. 
+
+```{r}
+data_long_rani <- left_join(data_long, model_coefs, by = "Group")
+```
+
+Once I have extracted the coefficients and joined them to my original data set, I can plot it an see if there is evidence of Simpson's Paradox. 
+
+```{r}
+model_coef_plot <- ggplot(data = data_long_rani, 
+       mapping = aes(x = x, 
+                     y = y, 
+                     colour = Group)
+       ) +
+  geom_point(na.rm = T, alpha = 0.5) +
+  geom_abline(aes(intercept = Intercept, 
+                  slope = Slope,
+                  colour = Group
+                  ),
+              size = 1.5
+              ) +
+  theme(legend.position = "top")
+
+# see the plot
+model_coef_plot
+```
+
 
 ## Task 4: 
 Fit a pooled model ignoring the hierarchical structure of the data (using the lm function in r)
