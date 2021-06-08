@@ -1,0 +1,61 @@
+---
+title: 'Assigment #1'
+author: "Ramiro Casó - Incae Business School"
+date: "6/8/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load packages
+
+```{r 9_load_packages, include=FALSE}
+rm(list=ls())
+library(tidyverse)
+library(lme4)
+library(broom.mixed)
+library(readr)
+```
+
+## Importing the data 
+```{r}
+data_wide <- read_csv("data_wide.csv")
+View(data_wide)
+```
+## Task 1 
+Transpose the data from wide form to long form.
+
+```{r}
+data_long <- data_wide %>%
+  pivot_longer(cols = c(y1,y2,y3,y4,y5,x1,x2,x3,x4,x5),
+   names_to = c(".value", "Group"),
+   names_pattern = "(.)(.)")
+
+```
+
+## Task 2: 
+Plot the data in aggregate and describe what you see 
+
+## Task 3: 
+Plot the data by group to see if there is any evidence of Simpson's paradox. What do you think after looking at this?
+
+## Task 4: 
+Fit a pooled model ignoring the hierarchical structure of the data (using the lm function in r)
+
+## Task 5: 
+Fit a multilevel model with random intercepts for each group in the data (use the lmer function in r). What changes in the parameters between the pooled and multilevel models?
+
+## Task 6: 
+Fit a model with random intercepts and slopes for each group. 
+
+## Task 7: 
+Fit a model with crossed random effects (both intercepts and slopes) for both group and id.
+
+## Task 8: 
+Because the models in Tasks 5, 6, and 7 are all nested, use a Chi-square test on model deviance to assess whether the more complicated models (i.e., those in Tasks 6 and 7) provide better model fits. To do this, it would be helpful to use the "anova" function in r.
+
+## Task 9: 
+[Not graded because there is a chance you won't figure it out in r] get the predicted values (i.e., y_hat) for the model from Task 7. Then plot x and the predicted y's for the first 5 id's in the dataset also accounting for the 5 groups. Here is the code for this last task:
+
