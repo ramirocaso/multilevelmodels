@@ -1,5 +1,5 @@
 ---
-title: 'Assigment #1'
+title: 'Assignment #1'
 author: "Ramiro Casó - Incae Business School"
 date: "6/8/2021"
 output: html_document
