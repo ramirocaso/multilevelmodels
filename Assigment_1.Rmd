@@ -73,7 +73,8 @@ Yes, it appears to be evidence of Simpson's Paradox, since the relationship betw
 
 
 ```{r}
-lm(y ~ 1 + x, data = data_long)
+pooled_model <- lm(y ~ 1 + x, data = data_long)
+summary(pooled_model)
 ```
 
 ### Task 5: Fit a multilevel model with random intercepts for each group in the data (use the lmer function in r). What changes in the parameters between the pooled and multilevel models?
@@ -83,19 +84,19 @@ lm(y ~ 1 + x, data = data_long)
 intercepts_model <- lmer(y ~ 1+ x + (1 | Group), data = data_long) 
 
 # Then I extract the group's coefficients. 
-model_coefs <- coef(intercepts_model)$Group %>% 
+model_coefs_rani <- coef(intercepts_model)$Group %>% 
   rename(Intercept = `(Intercept)`, Slope = x) %>% 
   rownames_to_column("Group")
 
 # and here we can see coefficients
-model_coefs
+model_coefs_rani
 ```
 The main difference is in the sign of the slope. As you can see, in the pooled model, the slope is negative (as seen aslo in the original scatter plot). When you create a model with random intercepts, we now have a positive single value of slopes. This is indicative of Simpson's Paradox. 
 
 We can plot this coefficients to see the difference by joining the new intercepts and slopes to the original data set. I will create a second data  set named `data_long_rani` for that. 
 
 ```{r}
-data_long_rani <- left_join(data_long, model_coefs, by = "Group")
+data_long_rani <- left_join(data_long, model_coefs_rani, by = "Group")
 ```
 
 Once I have extracted the coefficients and joined them to my original data set, I can plot it.
@@ -124,33 +125,41 @@ model_coef_plot
 
 ```{r}
 # fit random slopes model
-model <- lmer(y ~ x + (1 + x | Group), data = data_long) 
+ranis_model <- lmer(y ~ x + (1 + x | Group), data = data_long) 
 
 # Then I extract the group's coefficients as before
-model_coefs <- coef(model)$Group %>% 
+model_coefs_ranis <- coef(ranis_model)$Group %>% 
   rename(Intercept = `(Intercept)`, Slope = x) %>% 
   rownames_to_column("Group")
 
 # see coefficients
-model_coefs
+model_coefs_ranis
 ```
 
 Next, we'll join these coefficients to our original data.
 
 ```{r}
-data_long_rans <- left_join(data_long, model_coefs, by = "Group")
+data_long_ranis <- left_join(data_long, model_coefs_ranis, by = "Group")
 ```
 
 Then we'll plot our original data with our new, random intercepts model. Here, we'll use a new, cheat function from ggplot, `%+%` (read: add components). This takes a fitted plot from ggplot, and replaces the data from that plot with whatever comes to the right of the function. 
 
 ```{r}
-model_coef_plot %+% data_long_rans
+model_coef_plot %+% data_long_ranis
 ```
 
 ### Task 7: Fit a model with crossed random effects (both intercepts and slopes) for both group and id.
-
+```{r}
+cross_ran_model <- lmer(y ~ 1+ x + (1 | id) + (1 | Group), data = data_long)
+summary(cross_ran_model)
+```
 
 ### Task 8: Because the models in Tasks 5, 6, and 7 are all nested, use a Chi-square test on model deviance to assess whether the more complicated models (i.e., those in Tasks 6 and 7) provide better model fits. To do this, it would be helpful to use the "anova" function in r.
+
+```{r}
+anova(intercepts_model, ranis_model, cross_ran_model, test = "Chisq")
+```
+
 
 ### Task 9: [Not graded because there is a chance you won't figure it out in r] get the predicted values (i.e., y_hat) for the model from Task 7. Then plot x and the predicted y's for the first 5 id's in the dataset also accounting for the 5 groups. Here is the code for this last task:
 
