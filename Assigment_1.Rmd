@@ -25,7 +25,7 @@ data_wide <- read_csv("data_wide.csv")
 View(data_wide)
 ```
 ## Task 1 
-Transpose the data from wide form to long form.
+Transpose the data from wide form to long form. I also preview the first 10 rows of the new pivoted data set
 
 ```{r}
 data_long <- data_wide %>%
@@ -33,6 +33,7 @@ data_long <- data_wide %>%
    names_to = c(".value", "Group"),
    names_pattern = "(.)(.)")
 
+head(data_long,10)
 ```
 
 ## Task 2: 
